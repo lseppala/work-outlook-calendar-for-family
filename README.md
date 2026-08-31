@@ -6,9 +6,13 @@ events that Outlook explicitly marks as **Busy**, and every event is renamed to
 `<name> in meeting`. Overlapping and immediately back-to-back meetings are
 combined into a single availability block.
 
+
+<img width="968" height="323" alt="image" src="https://github.com/user-attachments/assets/f370cf78-5bae-4f92-bdb7-ca9ad9dafb4d" />
+
 The Worker removes source titles, descriptions, locations, attendees,
 organizers, meeting links, attachments, alarms, and other calendar metadata.
 Access requires a shared secret in the subscription URL.
+
 
 ## Requirements
 
