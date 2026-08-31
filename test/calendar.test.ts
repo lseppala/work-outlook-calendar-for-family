@@ -39,8 +39,8 @@ function timedEvent(
   ];
 }
 
-function transformCalendar(source: string, personName: string): string {
-  return transformCalendarSource(source, personName, { now: NOW });
+function transformCalendar(source: string, eventTitle: string): string {
+  return transformCalendarSource(source, eventTitle, { now: NOW });
 }
 
 describe("transformCalendar", () => {
@@ -62,7 +62,7 @@ describe("transformCalendar", () => {
       ...timedEvent("missing", undefined, ["TRANSP:OPAQUE"]),
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "  Alice Mtg  ");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(output).toContain("DTSTART:20260826T160000Z");
@@ -75,7 +75,7 @@ describe("transformCalendar", () => {
     expect(output).not.toContain("UID:oof");
     expect(output).not.toContain("UID:unknown");
     expect(output).not.toContain("UID:missing");
-    expect(output.match(/SUMMARY:Taylor in meeting/g)).toHaveLength(2);
+    expect(output.match(/SUMMARY:Alice Mtg/g)).toHaveLength(2);
     expect(() => ICAL.parse(output)).not.toThrow();
   });
 
@@ -101,7 +101,7 @@ describe("transformCalendar", () => {
       "END:VEVENT",
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(1);
     expect(output).toContain("DTSTART:20260827T000000Z");
@@ -123,7 +123,7 @@ describe("transformCalendar", () => {
       ]),
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(1);
     expect(output).toContain("DTSTART:20260826T160000Z");
@@ -166,7 +166,7 @@ describe("transformCalendar", () => {
       ),
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(output).toContain("DTSTART:20260826T160000Z");
@@ -227,7 +227,7 @@ describe("transformCalendar", () => {
       "END:VEVENT",
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output).toContain("DTSTART:20260826T160000Z");
     expect(output).toContain("DTEND:20260826T170000Z");
@@ -269,7 +269,7 @@ describe("transformCalendar", () => {
       ),
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(output).toContain("DTSTART:20260826T160000Z");
@@ -292,7 +292,7 @@ describe("transformCalendar", () => {
       ),
     );
 
-    const output = transformCalendar(source, "Taylor");
+    const output = transformCalendar(source, "Alice Mtg");
 
     expect(output.match(/BEGIN:VEVENT/g)).toHaveLength(2);
     expect(output).toContain("DTSTART:20260826T160000Z");
@@ -301,29 +301,42 @@ describe("transformCalendar", () => {
     expect(output).toContain("DTEND:20260827T180000Z");
   });
 
-  it("escapes the configured name and emits a valid empty calendar", () => {
+  it("escapes the configured title and emits a valid empty calendar", () => {
     const namedOutput = transformCalendar(
       calendar(...timedEvent("busy", "BUSY")),
-      "Taylor, Jr.; Team\nLead",
+      "Alice, Jr.; Team\nLead Mtg",
     );
     const emptyOutput = transformCalendar(
       calendar(...timedEvent("free", "FREE")),
-      "Taylor",
+      "Alice Mtg",
     );
 
     expect(namedOutput).toContain(
-      "SUMMARY:Taylor\\, Jr.\\; Team\\nLead in meeting",
+      "SUMMARY:Alice\\, Jr.\\; Team\\nLead Mtg",
     );
     expect(emptyOutput).not.toContain("BEGIN:VEVENT");
     expect(() => ICAL.parse(emptyOutput)).not.toThrow();
   });
 
-  it("rejects malformed input, non-calendars, and blank names", () => {
-    expect(() => transformCalendar("not an ics file", "Taylor")).toThrow(
+  it("preserves Unicode titles through iCalendar serialization", () => {
+    const title = "📅Alice Mtg📅";
+    const output = transformCalendar(
+      calendar(...timedEvent("busy", "BUSY")),
+      title,
+    );
+    const parsed = new ICAL.Component(ICAL.parse(output));
+    const event = parsed.getFirstSubcomponent("vevent");
+
+    expect(output).toContain(`SUMMARY:${title}`);
+    expect(event?.getFirstPropertyValue("summary")).toBe(title);
+  });
+
+  it("rejects malformed input, non-calendars, and blank titles", () => {
+    expect(() => transformCalendar("not an ics file", "Alice")).toThrow(
       CalendarTransformError,
     );
     expect(() =>
-      transformCalendar("BEGIN:VEVENT\r\nEND:VEVENT\r\n", "Taylor"),
+      transformCalendar("BEGIN:VEVENT\r\nEND:VEVENT\r\n", "Alice"),
     ).toThrow(CalendarTransformError);
     expect(() =>
       transformCalendar(calendar(...timedEvent("busy", "BUSY")), " "),
@@ -331,7 +344,7 @@ describe("transformCalendar", () => {
     expect(() =>
       transformCalendarSource(
         calendar(...timedEvent("busy", "BUSY")),
-        "Taylor",
+        "Alice",
         { now: new Date("invalid") },
       ),
     ).toThrow(CalendarTransformError);

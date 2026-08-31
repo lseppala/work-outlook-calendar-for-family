@@ -57,12 +57,12 @@ This script will:
   1. Check the software needed on this computer.
   2. Help you create or sign in to a free Cloudflare account.
   3. Help you obtain your Outlook calendar subscription link.
-  4. Ask for the first name or display name shown to your family.
+  4. Ask for the short event title shown to your family.
   5. Generate a private family access key.
   6. test and deploy the calendar proxy.
   7. Print the subscription URL to share with your family.
 
-Your display name, Outlook calendar URL, and family access key will be sent
+Your event title, Outlook calendar URL, and family access key will be sent
 directly to Cloudflare as encrypted Worker secrets. They will not be written to
 this project or committed to Git.
 EOF
@@ -167,18 +167,19 @@ while [[ "$OUTLOOK_CALENDAR_URL" != https://* ]]; do
   fi
 done
 
-heading "Step 4 of 7 - Choose the displayed name"
+heading "Step 4 of 7 - Choose the event title"
 
-PERSON_NAME=""
-while [[ -z "${PERSON_NAME//[[:space:]]/}" ]]; do
-  read -r -p "Name shown in events (a first name is fine): " PERSON_NAME
+EVENT_TITLE=""
+while [[ -z "${EVENT_TITLE//[[:space:]]/}" ]]; do
+  read -r -p "Event title shown to your family (example: Alice Mtg): " \
+    EVENT_TITLE
 
-  if [[ -z "${PERSON_NAME//[[:space:]]/}" ]]; then
+  if [[ -z "${EVENT_TITLE//[[:space:]]/}" ]]; then
     printf 'Please enter at least one visible character.\n'
   fi
 done
 
-printf 'Events will be named "%s in meeting".\n' "$PERSON_NAME"
+printf 'Events will be named "%s".\n' "$EVENT_TITLE"
 
 heading "Step 5 of 7 - Generate the family access key"
 
@@ -225,10 +226,15 @@ printf '%s' "$OUTLOOK_CALENDAR_URL" |
   npx wrangler secret put OUTLOOK_CALENDAR_URL ||
   fail "Cloudflare could not save the Outlook calendar secret."
 
-printf 'Sending the displayed name to Cloudflare as an encrypted secret...\n'
-printf '%s' "$PERSON_NAME" |
-  npx wrangler secret put PERSON_NAME ||
-  fail "Cloudflare could not save the displayed name."
+printf 'Sending the event title to Cloudflare as an encrypted secret...\n'
+ENCODED_EVENT_TITLE="$(
+  printf '%s' "$EVENT_TITLE" |
+    node -e \
+      'let value="";process.stdin.on("data",chunk=>value+=chunk);process.stdin.on("end",()=>process.stdout.write(Buffer.from(value,"utf8").toString("base64")));'
+)"
+printf 'base64:%s' "$ENCODED_EVENT_TITLE" |
+  npx wrangler secret put EVENT_TITLE ||
+  fail "Cloudflare could not save the event title."
 
 printf 'Sending the family access key to Cloudflare as an encrypted secret...\n'
 printf '%s' "$ACCESS_SECRET" |
@@ -305,4 +311,4 @@ Keep the complete URL private.
 EOF
 fi
 
-unset PERSON_NAME OUTLOOK_CALENDAR_URL ACCESS_SECRET
+unset EVENT_TITLE ENCODED_EVENT_TITLE OUTLOOK_CALENDAR_URL ACCESS_SECRET

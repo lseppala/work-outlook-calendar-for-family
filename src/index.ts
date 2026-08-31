@@ -9,7 +9,7 @@ const DECOY_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 const UPSTREAM_TIMEOUT_MS = 10_000;
 
 export interface Env {
-  PERSON_NAME: string;
+  EVENT_TITLE: string;
   OUTLOOK_CALENDAR_URL: string;
   ACCESS_SECRET: string;
 }
@@ -53,6 +53,11 @@ export async function handleRequest(
     return Response.redirect(DECOY_URL, 302);
   }
 
+  const eventTitle = decodeEventTitle(env.EVENT_TITLE);
+  if (!eventTitle) {
+    return textResponse("Worker configuration is incomplete", 500);
+  }
+
   const configurationError = validateConfiguration(env);
   if (configurationError !== undefined) {
     return textResponse(configurationError, 500);
@@ -77,7 +82,7 @@ export async function handleRequest(
   try {
     transformed = transformCalendar(
       await sourceResponse.text(),
-      env.PERSON_NAME,
+      eventTitle,
     );
   } catch (error) {
     if (error instanceof CalendarTransformError) {
@@ -115,8 +120,28 @@ async function secretsMatch(provided: string, expected: string): Promise<boolean
   return difference === 0;
 }
 
+function decodeEventTitle(value: string | undefined): string | undefined {
+  const configuredTitle = value?.trim();
+  if (!configuredTitle?.startsWith("base64:")) {
+    return configuredTitle || undefined;
+  }
+
+  try {
+    const binary = atob(configuredTitle.slice("base64:".length));
+    const bytes = Uint8Array.from(binary, (character) =>
+      character.charCodeAt(0),
+    );
+    const decodedTitle = new TextDecoder("utf-8", { fatal: true })
+      .decode(bytes)
+      .trim();
+    return decodedTitle || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function validateConfiguration(env: Env): string | undefined {
-  if (!env.PERSON_NAME?.trim() || !env.OUTLOOK_CALENDAR_URL?.trim()) {
+  if (!env.OUTLOOK_CALENDAR_URL?.trim()) {
     return "Worker configuration is incomplete";
   }
 

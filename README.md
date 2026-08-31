@@ -2,9 +2,9 @@
 
 A Cloudflare Worker that turns an Outlook calendar subscription into a
 privacy-minimized family calendar. The published feed contains only timed
-events that Outlook explicitly marks as **Busy**, and every event is renamed to
-`<name> in meeting`. Overlapping and immediately back-to-back meetings are
-combined into a single availability block.
+events that Outlook explicitly marks as **Busy**, and every event is assigned a
+short, configurable title such as `Alice Mtg`. Overlapping and immediately
+back-to-back meetings are combined into a single availability block.
 
 
 <img width="968" height="323" alt="image" src="https://github.com/user-attachments/assets/f370cf78-5bae-4f92-bdb7-ca9ad9dafb4d" />
@@ -32,7 +32,7 @@ verifying the result—run:
 
 You can also use `npm run setup`. The script explains each step before making a
 change, opens the relevant signup and calendar pages when supported, and prints
-the final family subscription URL. It never writes the display name, Outlook
+the final family subscription URL. It never writes the event title, Outlook
 URL, or generated access key to the project.
 
 The manual instructions below cover the same process.
@@ -64,18 +64,20 @@ npm install
 npx wrangler login
 ```
 
-Set the displayed name, source calendar URL, and a long random access secret
+Set the event title, source calendar URL, and a long random access secret
 using Wrangler's interactive secret prompts:
 
 ```sh
-npx wrangler secret put PERSON_NAME
+npm run set-title
 npx wrangler secret put OUTLOOK_CALENDAR_URL
 npx wrangler secret put ACCESS_SECRET
 ```
 
-`PERSON_NAME` can be a single first name. Do not put these values in
-`wrangler.jsonc`, a command-line argument, or a
-committed file.
+`EVENT_TITLE` is used verbatim after surrounding whitespace is removed. Short
+titles such as `Alice Mtg` work well on compact calendar displays. The title
+helper UTF-8 encodes the value before sending it to Wrangler, so emoji and other
+Unicode characters are preserved. Do not put these values in `wrangler.jsonc`,
+a command-line argument, or a committed file.
 
 For local development, copy `.dev.vars.example` to `.dev.vars` and replace all
 placeholder values. `.dev.vars` is ignored by Git.
@@ -121,6 +123,20 @@ Cloudflare Cache API entries are local to individual data centers, may be
 evicted early, and are not durable stale storage. If there is no cache entry and
 Outlook is unavailable or returns invalid calendar data, the Worker returns
 `502` rather than an empty calendar.
+
+## Change the event title
+
+Update the title without changing code:
+
+```sh
+npm run set-title
+```
+
+Enter the complete title, such as `Alice Mtg` or `📅Alice Mtg📅`, at the prompt.
+The helper transports the title as base64-encoded UTF-8 to prevent command-line
+or secret-input encoding damage. Wrangler deploys the updated secret
+immediately; no separate deployment is needed. Existing edge caches may show
+the previous title for up to five minutes.
 
 ## Rotate access
 

@@ -52,12 +52,12 @@ export class CalendarTransformError extends Error {
 
 export function transformCalendar(
   source: string,
-  personName: string,
+  eventTitle: string,
   options: CalendarTransformOptions = {},
 ): string {
-  const name = personName.trim();
-  if (name.length === 0) {
-    throw new CalendarTransformError("Person name is required");
+  const title = eventTitle.trim();
+  if (title.length === 0) {
+    throw new CalendarTransformError("Event title is required");
   }
 
   let parsed: unknown;
@@ -78,7 +78,7 @@ export function transformCalendar(
   const sanitizedEvents = sourceEvents
     .filter(shouldKeepEvent)
     .map((component) =>
-      sanitizeEvent(component, name, excludedRecurrenceIds),
+      sanitizeEvent(component, title, excludedRecurrenceIds),
     );
   const timezones = parsed[2]
     .filter((component) => component[0].toLowerCase() === "vtimezone");
@@ -94,7 +94,7 @@ export function transformCalendar(
   ];
   const intervals = expandBusyIntervals(intermediateCalendar, options);
   const events = mergeIntervals(intervals).map((interval) =>
-    createMergedEvent(interval, name),
+    createMergedEvent(interval, title),
   );
   const output: JCalComponent = [
     "vcalendar",
@@ -141,7 +141,7 @@ function shouldKeepEvent(component: JCalComponent): boolean {
 
 function sanitizeEvent(
   component: JCalComponent,
-  personName: string,
+  eventTitle: string,
   excludedRecurrenceIds: Map<string, JCalProperty[]>,
 ): JCalComponent {
   const properties = component[1]
@@ -161,7 +161,7 @@ function sanitizeEvent(
     }
   }
 
-  properties.push(["summary", {}, "text", `${personName} in meeting`]);
+  properties.push(["summary", {}, "text", eventTitle]);
   return ["vevent", properties, []];
 }
 
@@ -317,7 +317,7 @@ function mergeIntervals(intervals: BusyInterval[]): BusyInterval[] {
 
 function createMergedEvent(
   interval: BusyInterval,
-  personName: string,
+  eventTitle: string,
 ): JCalComponent {
   const start = toJCalDateTime(interval.start);
   const end = toJCalDateTime(interval.end);
@@ -331,7 +331,7 @@ function createMergedEvent(
       ["dtstamp", {}, "date-time", "1970-01-01T00:00:00Z"],
       ["dtstart", {}, "date-time", start],
       ["dtend", {}, "date-time", end],
-      ["summary", {}, "text", `${personName} in meeting`],
+      ["summary", {}, "text", eventTitle],
     ],
     [],
   ];

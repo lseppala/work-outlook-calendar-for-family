@@ -22,7 +22,7 @@ const SOURCE_CALENDAR = [
 ].join("\r\n");
 
 const ENV: Env = {
-  PERSON_NAME: "Taylor",
+  EVENT_TITLE: "Alice Mtg",
   OUTLOOK_CALENDAR_URL: "https://outlook.example.com/private/calendar.ics",
   ACCESS_SECRET: "correct-secret",
 };
@@ -152,7 +152,7 @@ describe("handleRequest", () => {
       "text/calendar; charset=utf-8",
     );
     expect(response.headers.get("cache-control")).toBe("public, max-age=300");
-    expect(body).toContain("SUMMARY:Taylor in meeting");
+    expect(body).toContain("SUMMARY:Alice Mtg");
     expect(body).not.toContain("Private title");
     expect(runtime.fetchCalls).toEqual([ENV.OUTLOOK_CALENDAR_URL]);
     expect(runtime.cache.storedUrls).toEqual([
@@ -160,6 +160,24 @@ describe("handleRequest", () => {
     ]);
     expect(runtime.cache.storedUrls[0]).not.toContain("correct-secret");
     expect(runtime.cache.storedUrls[0]).not.toContain("outlook");
+  });
+
+  it("decodes base64-transported Unicode event titles", async () => {
+    const title = "📅Alice Mtg📅";
+    const encodedTitle = btoa(
+      String.fromCharCode(...new TextEncoder().encode(title)),
+    );
+    const runtime = makeRuntime();
+    const { context } = makeContext();
+
+    const response = await handleRequest(
+      authorizedRequest(),
+      { ...ENV, EVENT_TITLE: `base64:${encodedTitle}` },
+      context,
+      runtime,
+    );
+
+    expect(await response.text()).toContain(`SUMMARY:${title}`);
   });
 
   it("serves a cache hit without fetching Outlook", async () => {
@@ -224,7 +242,8 @@ describe("handleRequest", () => {
   });
 
   it.each([
-    ["missing name", { ...ENV, PERSON_NAME: "" }],
+    ["missing title", { ...ENV, EVENT_TITLE: "" }],
+    ["invalid encoded title", { ...ENV, EVENT_TITLE: "base64:not-valid-%%%%" }],
     ["missing URL", { ...ENV, OUTLOOK_CALENDAR_URL: "" }],
     ["non-HTTPS URL", { ...ENV, OUTLOOK_CALENDAR_URL: "http://example.com" }],
     ["malformed URL", { ...ENV, OUTLOOK_CALENDAR_URL: "not a url" }],
