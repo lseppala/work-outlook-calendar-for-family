@@ -1,0 +1,6 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "outlook-busy-calendar",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-08-23"
+}
