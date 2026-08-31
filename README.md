@@ -33,11 +33,20 @@ URL, or generated access key to the project.
 
 The manual instructions below cover the same process.
 
-In Outlook on the web, open **Settings**, find the calendar sharing or
-publishing settings, publish the calendar with availability details, and copy
-the ICS subscription link. The exact menu labels depend on the Outlook version
-and organization policy. If calendar publishing is disabled by your
-organization, this Worker cannot bypass that policy.
+To get the Outlook subscription address:
+
+1. Open [Outlook Calendar](https://outlook.cloud.microsoft/calendar).
+2. Select the **three-dot menu** in the top bar, then select **Settings**.
+3. Select **Shared Calendars** in the side tab of the Settings panel.
+4. Find **Publish a Calendar** and select your work calendar.
+5. Choose the least-privileged availability option, preferably
+   **Can view when I'm busy**.
+6. Select **Publish**, then copy the **ICS** link—not the HTML link.
+
+The exact labels may differ slightly depending on the Outlook version and your
+organization's configuration. If **Publish a Calendar** is unavailable, your
+organization has probably disabled public calendar publishing. This Worker
+cannot bypass that policy.
 
 Treat the Outlook ICS URL as a secret. It normally contains a token that grants
 access to the source calendar.

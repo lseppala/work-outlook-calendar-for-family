@@ -138,10 +138,10 @@ heading "Step 3 of 7 - Get the Outlook calendar link"
 cat <<'EOF'
 The app needs Outlook's private ICS subscription link:
 
-  1. Open Outlook Calendar in your browser.
-  2. Open Settings (the gear icon), then View all Outlook settings.
-  3. Go to Calendar, then Shared calendars.
-  4. Under Publish a calendar, select your work calendar.
+  1. Open https://outlook.cloud.microsoft/calendar in your browser.
+  2. Select the three-dot menu in the top bar, then select Settings.
+  3. Select Shared Calendars in the side tab of the Settings panel.
+  4. Under Publish a Calendar, select your work calendar.
   5. Choose the least-privileged availability option, preferably
      "Can view when I'm busy."
   6. Select Publish, then copy the ICS link (not the HTML link).
@@ -154,7 +154,7 @@ Outlook Calendar will open now. Your organization's Outlook screens may use
 slightly different labels.
 EOF
 
-open_url "https://outlook.office.com/calendar/view/month"
+open_url "https://outlook.cloud.microsoft/calendar"
 pause
 
 OUTLOOK_CALENDAR_URL=""

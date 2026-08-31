@@ -2,6 +2,7 @@
   "name": "work-outlook-calendar-for-family",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "deploy": "wrangler deploy",
